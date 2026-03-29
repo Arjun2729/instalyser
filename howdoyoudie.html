@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>How Do You Die? — Instagram Oracle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="_base.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <div class="masthead">
+    <p><a href="index.html">← The Instagram Oracle</a> &nbsp;·&nbsp; Tool No. 4</p>
+  </div>
+
+  <h1>How Do You Die?</h1>
+  <p class="subtitle">Your fate was decided when you made an account.</p>
+
+  <hr class="divider" />
+
+  <div class="input-row">
+    <span class="at">@</span>
+    <input id="username" type="text" placeholder="yourusername" autocomplete="off" spellcheck="false" />
+    <button class="btn-submit" id="submit-btn">Find Out</button>
+  </div>
+
+  <div id="result-wrap">
+    <div class="result-card" id="result-card" data-label="✦ FATE DECLARED ✦">
+      <p id="result-text"></p>
+    </div>
+    <div class="actions">
+      <button onclick="shareIG()">Share on Instagram</button>
+      <button onclick="copyResult()">Copy Text</button>
+      <button onclick="saveCard('result-card', 'howdoyoudie-' + lastUser)">Save as Image</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to all tools</a>
+  <footer>Not responsible for existential dread &nbsp;·&nbsp; Instagram Edition</footer>
+
+  <script src="_shared.js"></script>
+  <script>
+    const deaths = [
+      "{u}: {r:fire}. A lot of it.",
+      "stay away from {r:the beach}, {u}. That's all we can say.",
+      "{u}, a {r:vending machine}. You know what you did.",
+      "the {r:moon}, {u}. Inexplicably. The moon.",
+      "{u} chokes on a {r:grape}. Not even an interesting grape.",
+      "{u}: {r:probed to death by aliens} who filed a very thorough report afterwards.",
+      "a {r:rogue font choice}, {u}. Papyrus specifically. The designers warned us.",
+      "{u} is dissolved in a {r:hot tub} by someone who really knew their chemistry.",
+      "{u} trips into {r:the void}. It was there the whole time.",
+      "{u} is consumed by {r:a podcast} they started and never finished. Episode 2 never dropped.",
+      "{u}: {r:something with a Latin name}. The doctors will be impressed.",
+      "{u} is eaten by {r:something undiscovered}. Science will name it after you. Small consolation.",
+      "a slow {r:bureaucratic process}, {u}. Forms, mostly. Very many forms.",
+      "{u} is struck by {r:lightning. Twice}. The second time was your own fault.",
+      "poisoned by {r:something ordered online with 3-star reviews}, {u}. You saw the reviews.",
+      "{u} will be found {r:in a lake}. The lake will be fine.",
+      "a {r:very polite murder}, {u}. Your killer held the door open first.",
+      "{u} chokes on {r:an apology they never gave}.",
+      "{u}: {r:correctly predicts their own death} but nobody believes them. Classic.",
+      "{u} is {r:outlived by a houseplant} they forgot to water.",
+      "{u}: {r:medical malpractice} so spectacular it gets taught in schools.",
+      "a {r:shark}, {u}. Nowhere near the ocean.",
+      "{u}, {r:expired supplements}. You thought they were fine. They were not fine.",
+      "a {r:miscalculation involving gravity}, {u}.",
+      "{u}: their own {r:cooking}. Specifically a Tuesday.",
+      "{u} is killed by a {r:strongly worded email} that arrived at the wrong moment.",
+      "{u}: {r:a fall} that everyone in the room will pretend not to have witnessed.",
+      "the {r:wrong side of a trivia argument}, {u}. You were so sure.",
+      "{u} dies of {r:old age}. 104. Still insufferable at the end. A good run.",
+      "{u} doesn't die. {r:Immortal}, somehow. Nobody is happy about this.",
+    ];
+
+    const blocked = new Set([]);
+
+    let lastUser = '', lastResult = '';
+
+    function findFate() {
+      const raw = document.getElementById('username').value.trim().replace(/^@/, '').toLowerCase();
+      if (!raw) return;
+      lastUser = raw;
+
+      const h = hash(raw);
+      const resultEl = document.getElementById('result-text');
+      const wrap = document.getElementById('result-wrap');
+
+      if (blocked.has(h)) {
+        resultEl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.85rem;color:#888;">access denied.</span>`;
+        wrap.classList.add('visible');
+        return;
+      }
+
+      const template = deaths[h % deaths.length];
+      lastResult = template.replace(/\{u\}/g, `@${raw}`).replace(/\{r:([^}]+)\}/g, '$1');
+      resultEl.innerHTML = render(template, raw);
+
+      wrap.classList.remove('visible');
+      void wrap.offsetWidth;
+      wrap.classList.add('visible');
+    }
+
+    function shareIG() {
+      const text = `How do I die? "${lastResult}" — find out yours:`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied for Instagram!';
+        setTimeout(() => btn.textContent = 'Share on Instagram', 1800);
+      });
+    }
+
+    function copyResult() {
+      if (!lastResult) return;
+      navigator.clipboard.writeText(lastResult).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Text', 1500);
+      });
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', findFate);
+    document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') findFate(); });
+  </script>
+</body>
+</html>

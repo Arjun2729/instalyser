@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Top or Bottom? — Instagram Oracle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="_base.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+</head>
+<body>
+
+  <div class="masthead">
+    <p><a href="index.html">← The Instagram Oracle</a> &nbsp;·&nbsp; Tool No. 1</p>
+  </div>
+
+  <h1>Top or Bottom?</h1>
+  <p class="subtitle">The username knows.</p>
+
+  <hr class="divider" />
+
+  <div class="input-row">
+    <span class="at">@</span>
+    <input id="username" type="text" placeholder="yourusername" autocomplete="off" spellcheck="false" />
+    <button class="btn-submit" id="submit-btn">Find Out</button>
+  </div>
+
+  <div id="result-wrap">
+    <div class="result-card" id="result-card" data-label="✦ VERDICT DELIVERED ✦">
+      <p id="result-text"></p>
+    </div>
+    <div class="actions">
+      <button onclick="shareIG()">Share on Instagram</button>
+      <button onclick="copyResult()">Copy Text</button>
+      <button onclick="saveCard('result-card', 'topbottom-' + lastUser)">Save as Image</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to all tools</a>
+  <footer>Not responsible for existential dread &nbsp;·&nbsp; Instagram Edition</footer>
+
+  <script src="_shared.js"></script>
+  <script>
+    const verdicts = [
+      "{u} is 100% a {r:top}. Hasn't apologized for anything since 2014.",
+      "{u} is a {r:bottom}. Cried at a commercial last week and hasn't recovered.",
+      "{u} is a {r:power bottom}. Runs everything from behind. The real authority in the room.",
+      "{u} is a {r:soft top}. Too tired to be aggressive. Dangerous in a completely different way.",
+      "{u} tells everyone they're a {r:top}. Cried themselves to sleep three times this month.",
+      "{u} is a {r:vers}. Cannot commit to a single identity. Cannot commit to anything else either.",
+      "{u} is a {r:pillow princess}. Lets others do the work. Will continue letting others do the work.",
+      "{u} is undeniably a {r:bottom} and their entire personality is incontrovertible proof.",
+      "Textbook {r:top energy}, {u}. Hasn't processed a single emotion in years. Going great.",
+      "{u} is so {r:bottom} they apologize when someone bumps into them.",
+      "{u} is a {r:vers} who leans bottom. Goes along with things. Regrets it. Goes along with more things.",
+      "Clinically, {u} is a {r:bottom}. The medical literature is very clear on this.",
+      "{u}: a {r:virgin}. Not a single controversial opinion. Not one enemy. Pathetically safe.",
+    ];
+
+    const blocked = new Set([]);
+    const easter = {};
+
+    let lastUser = '';
+    let lastResult = '';
+
+    function findFate() {
+      const raw = document.getElementById('username').value.trim().replace(/^@/, '').toLowerCase();
+      if (!raw) return;
+      lastUser = raw;
+
+      const h = hash(raw);
+      const resultEl = document.getElementById('result-text');
+      const wrap = document.getElementById('result-wrap');
+
+      if (blocked.has(h)) {
+        resultEl.innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.85rem;color:#888;">access denied. you know what you did.</span>`;
+        wrap.classList.add('visible');
+        return;
+      }
+
+      const template = easter[raw] || verdicts[h % verdicts.length];
+      lastResult = template.replace(/\{u\}/g, `@${raw}`).replace(/\{r:([^}]+)\}/g, '$1');
+      resultEl.innerHTML = render(template, raw);
+
+      wrap.classList.remove('visible');
+      void wrap.offsetWidth;
+      wrap.classList.add('visible');
+    }
+
+    function shareIG() {
+      const text = `Am I a top or a bottom? Instagram has spoken: "${lastResult}" — find out yours:`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied for Instagram!';
+        setTimeout(() => btn.textContent = 'Share on Instagram', 1800);
+      });
+    }
+
+    function copyResult() {
+      if (!lastResult) return;
+      navigator.clipboard.writeText(lastResult).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Text', 1500);
+      });
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', findFate);
+    document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') findFate(); });
+  </script>
+</body>
+</html>

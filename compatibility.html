@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Are You Compatible? — Instagram Oracle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="_base.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    .input-pair {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .and-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #bbb;
+      text-align: center;
+      padding: 2px 0;
+    }
+
+    .submit-full {
+      max-width: 480px;
+      width: 100%;
+      margin-top: 4px;
+      background: #1a1a1a;
+      color: #faf7f2;
+      border: none;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      padding: 13px;
+      cursor: pointer;
+      transition: background 0.15s;
+    }
+
+    .submit-full:hover { background: #E1306C; }
+
+    /* Compatibility bar */
+    .compat-score {
+      text-align: center;
+      margin-bottom: 16px;
+    }
+
+    .compat-number {
+      font-size: clamp(3rem, 12vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1;
+      color: #1a1a1a;
+    }
+
+    .compat-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      color: #999;
+      letter-spacing: 0.1em;
+    }
+
+    .bar-track {
+      width: 100%;
+      height: 6px;
+      background: #e8e4da;
+      margin: 20px 0 10px;
+      overflow: hidden;
+    }
+
+    .bar-fill {
+      height: 100%;
+      background: #1a1a1a;
+      width: 0%;
+      transition: width 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .compat-label {
+      font-family: 'Space Mono', monospace;
+      font-size: 10px;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: #aaa;
+      text-align: center;
+    }
+
+    .compat-names {
+      font-size: clamp(1rem, 3.5vw, 1.3rem);
+      text-align: center;
+      margin-top: 8px;
+      font-style: italic;
+      color: #555;
+    }
+
+    .compat-names .username { font-style: normal; }
+  </style>
+</head>
+<body>
+
+  <div class="masthead">
+    <p><a href="index.html">← The Instagram Oracle</a> &nbsp;·&nbsp; Tool No. 2</p>
+  </div>
+
+  <h1>Are You Compatible?</h1>
+  <p class="subtitle">Two handles. One verdict. No appeals.</p>
+
+  <hr class="divider" />
+
+  <div class="input-pair">
+    <div class="input-row">
+      <span class="at">@</span>
+      <input id="user1" type="text" placeholder="firstusername" autocomplete="off" spellcheck="false" />
+    </div>
+    <div class="and-label">& &nbsp; and &nbsp; &</div>
+    <div class="input-row">
+      <span class="at">@</span>
+      <input id="user2" type="text" placeholder="secondusername" autocomplete="off" spellcheck="false" />
+    </div>
+  </div>
+  <button class="submit-full" id="submit-btn">Check Compatibility</button>
+
+  <div id="result-wrap">
+    <div class="result-card" id="result-card" data-label="✦ CHEMISTRY REPORT ✦">
+      <div class="compat-score">
+        <div class="compat-number" id="score-num">—</div>
+        <div class="compat-pct">% compatible</div>
+      </div>
+      <div class="bar-track"><div class="bar-fill" id="bar-fill"></div></div>
+      <p class="compat-label" id="compat-label"></p>
+      <p class="compat-names" id="compat-names"></p>
+    </div>
+    <div class="actions">
+      <button onclick="shareIG()">Share on Instagram</button>
+      <button onclick="copyResult()">Copy Text</button>
+      <button onclick="saveCard('result-card', 'compatibility')">Save as Image</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to all tools</a>
+  <footer>Not responsible for existential dread &nbsp;·&nbsp;</footer>
+
+  <script src="_shared.js"></script>
+  <script>
+    const blocked = new Set([]);
+    const hardcoded = {};
+
+    const labels = [
+      [90, 100, "cursed. you'll destroy each other and call it love."],
+      [70,  89, "good chemistry. terrible for everyone around you."],
+      [50,  69, "functional. held together by spite and mutual obligation."],
+      [30,  49, "messy. one of you is already planning the exit. the other has no idea."],
+      [15,  29, "you have nothing in common except a mutual tolerance that is quietly eroding."],
+      [ 1,  14, "strangers would have been better. but here you are."],
+    ];
+
+    let lastScore = 0, lastU1 = '', lastU2 = '';
+
+    function getLabel(pct) {
+      for (const [lo, hi, text] of labels) {
+        if (pct >= lo && pct <= hi) return text;
+      }
+      return '';
+    }
+
+    function check() {
+      const u1 = document.getElementById('user1').value.trim().replace(/^@/, '').toLowerCase();
+      const u2 = document.getElementById('user2').value.trim().replace(/^@/, '').toLowerCase();
+      if (!u1 || !u2) return;
+
+      lastU1 = u1; lastU2 = u2;
+
+      const h1 = hash(u1), h2 = hash(u2);
+      if (blocked.has(h1) || blocked.has(h2)) {
+        document.getElementById('score-num').textContent = '—';
+        document.getElementById('compat-label').textContent = "access denied. you know what you did.";
+        document.getElementById('compat-names').innerHTML = '';
+        document.getElementById('bar-fill').style.width = '0%';
+        const wrap = document.getElementById('result-wrap');
+        wrap.classList.remove('visible'); void wrap.offsetWidth; wrap.classList.add('visible');
+        return;
+      }
+
+      const key = [u1, u2].sort().join('+');
+      let pct = hardcoded[key];
+      if (pct === undefined) {
+        pct = 1 + (hash(key) % 99);
+      }
+      lastScore = pct;
+
+      document.getElementById('score-num').textContent = pct;
+      document.getElementById('compat-label').textContent = getLabel(pct);
+      document.getElementById('compat-names').innerHTML =
+        `<span class="username">@${u1}</span> &amp; <span class="username">@${u2}</span>`;
+
+      const wrap = document.getElementById('result-wrap');
+      wrap.classList.remove('visible'); void wrap.offsetWidth; wrap.classList.add('visible');
+
+      // Animate bar after visible
+      setTimeout(() => {
+        document.getElementById('bar-fill').style.width = pct + '%';
+      }, 80);
+    }
+
+    function shareIG() {
+      const text = `@${lastU1} & @${lastU2} are ${lastScore}% compatible. ${getLabel(lastScore)} — find out yours:`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Share on Instagram', 1800);
+      });
+    }
+
+    function copyResult() {
+      const text = `@${lastU1} & @${lastU2} — ${lastScore}% compatible`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Text', 1500);
+      });
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', check);
+    [document.getElementById('user1'), document.getElementById('user2')].forEach(el => {
+      el.addEventListener('keydown', e => { if (e.key === 'Enter') check(); });
+    });
+  </script>
+</body>
+</html>

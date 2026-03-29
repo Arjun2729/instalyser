@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Red Flag Rating — Instagram Oracle</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="_base.css" />
+  <script src="https://html2canvas.hertzen.com/dist/html2canvas.min.js"></script>
+  <style>
+    /* Meter */
+    .meter-wrap {
+      margin: 22px 0 8px;
+    }
+
+    .meter-track {
+      width: 100%;
+      height: 8px;
+      background: #e8e4da;
+      overflow: hidden;
+    }
+
+    .meter-fill {
+      height: 100%;
+      width: 0%;
+      transition: width 1.8s cubic-bezier(0.22, 1, 0.36, 1);
+    }
+
+    .meter-fill.low    { background: #2d2d2d; }
+    .meter-fill.mid    { background: #c47a2a; }
+    .meter-fill.high   { background: #c0392b; }
+    .meter-fill.max    { background: #E1306C; animation: shake 0.4s infinite alternate; }
+
+    @keyframes shake {
+      from { transform: translateX(0); }
+      to   { transform: translateX(-3px); }
+    }
+
+    .score-display {
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+      justify-content: center;
+      margin-bottom: 12px;
+    }
+
+    .score-num {
+      font-size: clamp(3rem, 12vw, 5.5rem);
+      font-weight: 900;
+      line-height: 1;
+    }
+
+    .score-pct {
+      font-family: 'Space Mono', monospace;
+      font-size: 0.9rem;
+      color: #999;
+      letter-spacing: 0.08em;
+    }
+
+    .verdict-text {
+      font-size: clamp(1rem, 3.5vw, 1.25rem);
+      line-height: 1.5;
+      text-align: center;
+      margin-top: 14px;
+      font-style: italic;
+      color: #444;
+    }
+
+    .verdict-text strong { font-style: normal; color: #1a1a1a; }
+  </style>
+</head>
+<body>
+
+  <div class="masthead">
+    <p><a href="index.html">← The Instagram Oracle</a> &nbsp;·&nbsp; Tool No. 3</p>
+  </div>
+
+  <h1>Red Flag Rating</h1>
+  <p class="subtitle">How delusional is your grid, really.</p>
+
+  <hr class="divider" />
+
+  <div class="input-row">
+    <span class="at">@</span>
+    <input id="username" type="text" placeholder="yourusername" autocomplete="off" spellcheck="false" />
+    <button class="btn-submit" id="submit-btn">Rate Me</button>
+  </div>
+
+  <div id="result-wrap">
+    <div class="result-card" id="result-card" data-label="✦ RED FLAG REPORT ✦">
+      <div class="score-display">
+        <span class="score-num" id="score-num">—</span>
+        <span class="score-pct">%</span>
+      </div>
+      <div class="meter-wrap">
+        <div class="meter-track">
+          <div class="meter-fill" id="meter-fill"></div>
+        </div>
+      </div>
+      <p class="verdict-text" id="verdict-text"></p>
+    </div>
+    <div class="actions">
+      <button onclick="shareIG()">Share on Instagram</button>
+      <button onclick="copyResult()">Copy Text</button>
+      <button onclick="saveCard('result-card', 'redflag-' + lastUser)">Save as Image</button>
+    </div>
+  </div>
+
+  <a class="back-link" href="index.html">← Back to all tools</a>
+  <footer>Not responsible for existential dread &nbsp;·&nbsp; Instagram Edition</footer>
+
+  <script src="_shared.js"></script>
+  <script>
+    // Verdict bands: [minPct, maxPct, cssClass, text]
+    // {u} = username, {s} = score
+    const bands = [
+      [85, 100, 'max',  `{u} is a {r:full menace}. You have strong opinions about things nobody asked. You've ended a friendship over something small and would do it again.`],
+      [70,  84, 'high', `{u} is {r:genuinely alarming}. Not in a fun way. In the way that makes people say "I'm not surprised" when something happens.`],
+      [55,  69, 'high', `{u} has {r:main character syndrome} at a clinical level. You narrate your own life to yourself. You think it's charming. It isn't.`],
+      [40,  54, 'mid',  `{u} is a {r:moderate red flag}. You've said something unhinged in a group chat and left before anyone could respond.`],
+      [25,  39, 'mid',  `Mostly fine, {u}. But the {r:occasional decision} you make haunts the people who witnessed it. They don't bring it up. They haven't forgotten.`],
+      [10,  24, 'low',  `{u} is {r:surprisingly low drama}. Either genuinely well-adjusted, or the real chaos is somewhere we can't see.`],
+      [ 1,   9, 'low',  `{u}: suspiciously {r:normal}. Not a single red flag. This is statistically impossible and we are actively investigating.`],
+    ];
+
+    const blocked = new Set([]);
+    const hardcoded = {};
+
+    let lastUser = '', lastScore = 0, lastVerdict = '';
+
+    function getBand(pct) {
+      for (const b of bands) {
+        if (pct >= b[0] && pct <= b[1]) return b;
+      }
+      return bands[bands.length - 1];
+    }
+
+    function rate() {
+      const raw = document.getElementById('username').value.trim().replace(/^@/, '').toLowerCase();
+      if (!raw) return;
+      lastUser = raw;
+
+      const h = hash(raw);
+      if (blocked.has(h)) {
+        document.getElementById('verdict-text').innerHTML = `<span style="font-family:'Space Mono',monospace;font-size:0.85rem;color:#888;">access denied.</span>`;
+        document.getElementById('score-num').textContent = '—';
+        const wrap = document.getElementById('result-wrap');
+        wrap.classList.remove('visible'); void wrap.offsetWidth; wrap.classList.add('visible');
+        return;
+      }
+
+      let pct = hardcoded[raw];
+      if (pct === undefined) {
+        pct = 1 + (hash(raw + 'redflag') % 99);
+      }
+      lastScore = pct;
+
+      const band = getBand(pct);
+      const fill = document.getElementById('meter-fill');
+      const verdict = document.getElementById('verdict-text');
+
+      // Remove old class
+      fill.className = 'meter-fill';
+      fill.style.width = '0%';
+
+      document.getElementById('score-num').textContent = pct;
+
+      // Render verdict template
+      const tmpl = band[3];
+      lastVerdict = tmpl.replace(/\{u\}/g, `@${raw}`).replace(/\{r:([^}]+)\}/g, '$1').replace(/\{s\}/g, pct);
+      verdict.innerHTML = tmpl
+        .replace(/\{u\}/g, `<span class="username">@${raw}</span>`)
+        .replace(/\{r:([^}]+)\}/g, `<span class="highlight">$1</span>`)
+        .replace(/\{s\}/g, pct);
+
+      const wrap = document.getElementById('result-wrap');
+      wrap.classList.remove('visible'); void wrap.offsetWidth; wrap.classList.add('visible');
+
+      setTimeout(() => {
+        fill.classList.add(band[2]);
+        fill.style.width = pct + '%';
+      }, 80);
+    }
+
+    function shareIG() {
+      const text = `My Instagram red flag rating is ${lastScore}%. ${lastVerdict} — get yours:`;
+      navigator.clipboard.writeText(text).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Share on Instagram', 1800);
+      });
+    }
+
+    function copyResult() {
+      if (!lastVerdict) return;
+      navigator.clipboard.writeText(lastVerdict).then(() => {
+        const btn = event.target;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = 'Copy Text', 1500);
+      });
+    }
+
+    document.getElementById('submit-btn').addEventListener('click', rate);
+    document.getElementById('username').addEventListener('keydown', e => { if (e.key === 'Enter') rate(); });
+  </script>
+</body>
+</html>
