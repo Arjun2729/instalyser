@@ -122,13 +122,62 @@
     // Verdict bands: [minPct, maxPct, cssClass, text]
     // {u} = username, {s} = score
     const bands = [
-      [85, 100, 'max',  `{u} is a {r:full menace}. You have strong opinions about things nobody asked. You've ended a friendship over something small and would do it again.`],
-      [70,  84, 'high', `{u} is {r:genuinely alarming}. Not in a fun way. In the way that makes people say "I'm not surprised" when something happens.`],
-      [55,  69, 'high', `{u} has {r:main character syndrome} at a clinical level. You narrate your own life to yourself. You think it's charming. It isn't.`],
-      [40,  54, 'mid',  `{u} is a {r:moderate red flag}. You've said something unhinged in a group chat and left before anyone could respond.`],
-      [25,  39, 'mid',  `Mostly fine, {u}. But the {r:occasional decision} you make haunts the people who witnessed it. They don't bring it up. They haven't forgotten.`],
-      [10,  24, 'low',  `{u} is {r:surprisingly low drama}. Either genuinely well-adjusted, or the real chaos is somewhere we can't see.`],
-      [ 1,   9, 'low',  `{u}: suspiciously {r:normal}. Not a single red flag. This is statistically impossible and we are actively investigating.`],
+      [85, 100, 'max', [
+        `{u} is a {r:full menace}. You have strong opinions about things nobody asked. You've ended a friendship over something small and would do it again.`,
+        `{u} is {r:genuinely unwell}. In the fun way. You are someone's villain origin story and you are aware of this.`,
+        `{u}: {r:nothing but red flags}. Not one green flag in sight. The garden is entirely red. It is beautiful and it is terrible.`,
+        `{u} has {r:no self-awareness} and that is somehow working in your favour. For now. Enjoy it.`,
+        `everything about {u} is a {r:red flag}. The name. The energy. The way you read this result and felt seen.`,
+        `{u} is the kind of person other people {r:warn each other about} in hushed tones. You'd be flattered.`,
+      ]],
+      [70,  84, 'high', [
+        `{u} is {r:genuinely alarming}. Not in a fun way. In the way that makes people say "I'm not surprised" when something happens.`,
+        `{u}: {r:significant red flag energy}. A therapist has definitely heard about you. Recently.`,
+        `{u} has {r:done something}. We don't know what. But someone does. And they've told people.`,
+        `{u} is the person someone warns their friend about {r:one conversation too late}.`,
+        `{u}: {r:high risk, questionable reward}. Most people wouldn't. A few will. You know who you are.`,
+        `{u} has left {r:a trail}. It's subtle. But it's there if you know where to look.`,
+      ]],
+      [55,  69, 'high', [
+        `{u} has {r:main character syndrome} at a clinical level. You narrate your own life to yourself. You think it's charming. It isn't.`,
+        `{u}: a {r:walking amber flag}. Not red. Not green. Permanently, stubbornly amber.`,
+        `{u} is the kind of person who {r:keeps score}. Always. Even when they say they don't. Especially then.`,
+        `{u} has said something {r:deeply unhinged} at a quiet moment and immediately changed the subject.`,
+        `{u}: {r:complicated}. By which we mean: a nightmare. But an interesting one.`,
+        `{u} would describe themselves as "a lot." They are correct. It is not the compliment they think it is.`,
+      ]],
+      [40,  54, 'mid', [
+        `{u} is a {r:moderate red flag}. You've said something unhinged in a group chat and left before anyone could respond.`,
+        `{u}: {r:mostly manageable}. With the right person. Under the right conditions. On a good day.`,
+        `{u} has a {r:specific type of chaos} that only surfaces occasionally. People remember it.`,
+        `{u}: the red flag is {r:situational}. It depends on the day, the weather, and whether you've eaten.`,
+        `a few flags, {u}. Not enough to run. Enough to keep an eye on.`,
+        `{u} has {r:one signature move} that is, objectively, a lot. They bring it out rarely. It lands every time.`,
+      ]],
+      [25,  39, 'mid', [
+        `Mostly fine, {u}. But the {r:occasional decision} you make haunts the people who witnessed it. They haven't forgotten.`,
+        `{u}: {r:low drama} on the surface. The depths are a separate matter.`,
+        `{u} has {r:one thing}. Just the one. But it is quite a lot of a thing.`,
+        `clean record, {u}. Something happened once and you dealt with it quietly and efficiently. That's a flag in itself.`,
+        `{u} is {r:mostly harmless}. The word 'mostly' is doing significant structural work in that sentence.`,
+        `fine, {u}. Genuinely fine. The people who know you best would add a pause before agreeing.`,
+      ]],
+      [10,  24, 'low', [
+        `{u} is {r:surprisingly low drama}. Either genuinely well-adjusted, or the real chaos is somewhere we haven't looked yet.`,
+        `{u}: basically {r:fine}. Statistically improbable. Here we are.`,
+        `{u} has {r:almost no red flags}. This is either very good or very deliberate.`,
+        `{u}: {r:low risk}. People are surprised when they find out the one thing. There is always one thing.`,
+        `very few flags, {u}. The ones that do exist are very specific and very personal and you know exactly what they are.`,
+        `{u} is {r:alright}. People say this warmly. It's a compliment. Mostly.`,
+      ]],
+      [ 1,   9, 'low', [
+        `{u}: suspiciously {r:normal}. Not a single red flag. This is statistically impossible and we are actively investigating.`,
+        `{u} has {r:no flags at all}. This is concerning in its own right.`,
+        `{u}: {r:too clean}. Nobody is this clean. We don't trust it.`,
+        `zero red flags for {u}. Either genuinely a good person or the flags are somewhere we haven't thought to look.`,
+        `{u} is {r:fine}. Genuinely, boringly fine. Cherish it. These results don't lie.`,
+        `{u}: a {r:statistical anomaly}. The model has never seen results this clean. It's unsettling.`,
+      ]],
     ];
 
     const blocked = new Set([]);
@@ -173,8 +222,9 @@
 
       document.getElementById('score-num').textContent = pct;
 
-      // Render verdict template
-      const tmpl = band[3];
+      // Render verdict template — pick from multiple options using secondary hash
+      const texts = band[3];
+      const tmpl = texts[hash(raw + 'verdict') % texts.length];
       lastVerdict = tmpl.replace(/\{u\}/g, `@${raw}`).replace(/\{r:([^}]+)\}/g, '$1').replace(/\{s\}/g, pct);
       verdict.innerHTML = tmpl
         .replace(/\{u\}/g, `<span class="username">@${raw}</span>`)

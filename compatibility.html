@@ -157,19 +157,58 @@
     const hardcoded = {};
 
     const labels = [
-      [90, 100, "cursed. you'll destroy each other and call it love."],
-      [70,  89, "good chemistry. terrible for everyone around you."],
-      [50,  69, "functional. held together by spite and mutual obligation."],
-      [30,  49, "messy. one of you is already planning the exit. the other has no idea."],
-      [15,  29, "you have nothing in common except a mutual tolerance that is quietly eroding."],
-      [ 1,  14, "strangers would have been better. but here you are."],
+      [90, 100, [
+        "cursed. you'll destroy each other and call it love.",
+        "soulmates in the way two natural disasters are compatible.",
+        "deeply, dangerously aligned. the people around you are nervous.",
+        "perfect. which is exactly the problem.",
+        "100% and somehow that's the most alarming outcome.",
+      ]],
+      [70,  89, [
+        "good chemistry. terrible for everyone around you.",
+        "genuinely works. somehow. nobody's more surprised than you.",
+        "strong. in the way that things about to break are strong.",
+        "you bring something out in each other. still unclear if that's good.",
+        "compatible in ways that can't be explained and probably shouldn't be.",
+      ]],
+      [50,  69, [
+        "functional. held together by spite and mutual obligation.",
+        "workable. with effort. a lot of effort. every single day.",
+        "fine. which is the most damning thing you can be.",
+        "could be worse. has been worse. is currently fine.",
+        "a coin flip, honestly. still flipping.",
+      ]],
+      [30,  49, [
+        "messy. one of you is already planning the exit. the other has no idea.",
+        "chaotic. together you make one functional person, barely.",
+        "turbulent in the way that makes the flight unpleasant for everyone nearby.",
+        "not great. not terrible. mostly just exhausting.",
+        "compatible in the way that a fire and a curtain are compatible.",
+      ]],
+      [15,  29, [
+        "you have nothing in common except a mutual tolerance that is quietly eroding.",
+        "you've already had this argument. you'll have it again.",
+        "there's something there. buried. under a lot of other stuff.",
+        "compatible in the same way a spanner and a screw are compatible.",
+        "unlikely. and yet here you both are, doing this.",
+      ]],
+      [ 1,  14, [
+        "strangers would have been better. but here you are.",
+        "no. and the number just confirms what was already obvious.",
+        "the universe is telling you something. it has been for a while.",
+        "not compatible. not even close. good luck.",
+        "a statistically improbable disaster. impressive in its own way.",
+      ]],
     ];
 
     let lastScore = 0, lastU1 = '', lastU2 = '';
 
-    function getLabel(pct) {
-      for (const [lo, hi, text] of labels) {
-        if (pct >= lo && pct <= hi) return text;
+    function getLabel(pct, u1, u2) {
+      for (const [lo, hi, texts] of labels) {
+        if (pct >= lo && pct <= hi) {
+          const idx = hash((u1 || '') + (u2 || '') + 'label') % texts.length;
+          return texts[idx];
+        }
       }
       return '';
     }
@@ -200,7 +239,7 @@
       lastScore = pct;
 
       document.getElementById('score-num').textContent = pct;
-      document.getElementById('compat-label').textContent = getLabel(pct);
+      document.getElementById('compat-label').textContent = getLabel(pct, u1, u2);
       document.getElementById('compat-names').innerHTML =
         `<span class="username">@${u1}</span> &amp; <span class="username">@${u2}</span>`;
 
@@ -214,7 +253,7 @@
     }
 
     function shareIG() {
-      const text = `@${lastU1} & @${lastU2} are ${lastScore}% compatible. ${getLabel(lastScore)} — find out yours:`;
+      const text = `@${lastU1} & @${lastU2} are ${lastScore}% compatible. ${getLabel(lastScore, lastU1, lastU2)} — find out yours:`;
       navigator.clipboard.writeText(text).then(() => {
         const btn = event.target;
         btn.textContent = 'Copied!';
